@@ -97,11 +97,13 @@ def seed_data(total: int) -> None:
     with app.app_context():
         f = Faker('sv_SE')
 
-        # Seed admin details
         admin_details = [
-            {"namn": "Stefan Holmberg", "email": "stefan.holmberg@systementor.se", "username": "Admin", "password": "Hejsan123#"},
-            {"namn": "Sebastian Mentor", "email": "stefan.holmberg@nackademin.se", "username": "Cashier", "password": "Hejsan123#"},
-            {"namn": "Mohammad Rahimi", "email": "m.rahimi.vasteras@gmail.com", "username": "Boss", "password": "Hejsan123#"},
+            {"namn": "Stefan Holmberg", "email": "stefan.holmberg@systementor.se", "username": "Admin",
+             "password": "Hejsan123#"},
+            {"namn": "Sebastian Mentor", "email": "stefan.holmberg@nackademin.se", "username": "Cashier",
+             "password": "Hejsan123#"},
+            {"namn": "Mohammad Rahimi", "email": "m.rahimi.vasteras@gmail.com", "username": "Boss",
+             "password": "Hejsan123#"},
         ]
 
         for admin_detail in admin_details:
@@ -136,14 +138,23 @@ def seed_data(total: int) -> None:
             # Add accounts to the customer
             for _ in range(random.randint(1, 3)):
                 account_number = f.random_number(digits=15)
-                balance = round(random.uniform(1000, 50000), 2)  # Rounded to 2 decimal digits
+                initial_deposit = 5000.0
+                balance = initial_deposit
 
                 account = Account(account_number=account_number, balance=balance)
                 person.accounts.append(account)
 
-                # Add transactions to the account
+                # Add initial deposit transaction
+                initial_deposit_transaction = Transaction(
+                    amount=initial_deposit,
+                    transaction_type='Insättning',
+                    timestamp=f.date_time_this_decade()
+                )
+                account.transactions.append(initial_deposit_transaction)
+
+                # Add random transactions to the account
                 for _ in range(random.randint(5, 20)):
-                    amount = round(random.uniform(-500, 500), 2)  # Rounded to 2 decimal digits
+                    amount = round(random.uniform(-500, 500), 2)
                     transaction_type = 'Insättning' if amount > 0 else random.choice(['Uttag', 'Överföring'])
                     timestamp = f.date_time_this_decade()
 
@@ -166,12 +177,15 @@ def seed_data(total: int) -> None:
 
 
 
+
 @app.route("/login")
 def index():
     total_customers = Customer.query.count()
-    total_balance = db.session.query(db.func.sum(Account.balance)).scalar() or 0
+    total_balance = db.session.query(db.func.round(db.func.sum(Account.balance), 2)).scalar() or 0
+    total_accounts = Account.query.count()
 
-    return render_template('index.html', total_customers=total_customers, total_balance=total_balance)
+    return render_template('index.html', total_customers=total_customers, total_balance=total_balance, total_accounts=total_accounts)
+
 
 @app.route("/", methods=["GET", "POST"]) #första sidan när personalen kommer
 def login():
@@ -209,6 +223,7 @@ def search():
     page = request.args.get('page', 1, type=int)
     per_page = 10
     customers_paginated = Customer.query.paginate(page=page, per_page=per_page)
+
     try:
         if search_query is not None:
             search_query_int = int(search_query)  # Attempt to convert to integer
@@ -230,7 +245,8 @@ def search():
             Customer.personnummer.like(f"%{search_query}%")
         ).all()
 
-    return render_template("search.html", results=results, search_query=search_query,customers_paginated=customers_paginated)
+    return render_template("search.html", results=results, search_query=search_query, customers_paginated=customers_paginated)
+
 
 
 @app.route('/searchresults/<query>')

@@ -11,32 +11,32 @@
     {% if results %}
         <h3>Search Results:</h3>
         {% for customer in results %}
-            <table class="table" style="padding: 15px">
-                <thead>
+        <table class="table">
+            <thead>
+                <tr>
+                    <th>Customer Name</th>
+                    <th>Email</th>
+                    <th>Personnummer</th>
+                    <th>City</th>
+                    <th>Account 1</th>
+                    <th>Account 2</th>
+                    <th>Account 3</th>
+                </tr>
+            </thead>
+            <tbody>
+                {% for customer in results %}
                     <tr>
-                        <th>KundID</th>
-                        <th>Namn</th>
-                        <th>Address</th>
-                        <th>Email</th>
-                        <th>Saldo (SEK)</th>
-                        <th>Actions</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>{{ customer.id }}</td>
                         <td>{{ customer.namn }}</td>
-                        <td>{{ customer.address }}</td>
                         <td>{{ customer.email }}</td>
-                        <td>{{ customer.total_balance }}</td>
-                        <td>
-                            {% for account in customer.accounts %}
-                                <a href="{{ url_for('accounttransactions', account_id=account.id) }}">View Transactions</a>
-                            {% endfor %}
-                        </td>
+                        <td>{{ customer.personnummer }}</td>
+                        <td>{{ customer.city }}</td>
+                        <td><a href="{{ url_for('accounttransactions', account_id=customer.accounts[0].id) }}">{{ customer.accounts[0].account_number }}</a></td>
+                        <td><a href="{{ url_for('accounttransactions', account_id=customer.accounts[1].id) }}">{{ customer.accounts[1].account_number }}</a></td>
+                        <td><a href="{{ url_for('accounttransactions', account_id=customer.accounts[2].id) }}">{{ customer.accounts[2].account_number }}</a></td>
                     </tr>
-                </tbody>
-            </table>
+                {% endfor %}
+            </tbody>
+        </table>
         {% endfor %}
     {% else %}
         <p>No results found.</p>
