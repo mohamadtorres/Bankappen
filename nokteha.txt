@@ -1,0 +1,27 @@
+Lagt till {% extends "template.html" %} som säger att vi ska använda oss av template.html som grundmall. 
+
+ För att kunna gå mellan sidorna så behöver vi lägga till länkar. För att komma till rätt sökväg så fungerar det inte alltid att skriva: <a href="/exempel"> i html-filen. För att undvika problem senare i programmet så kommer vi att använda oss av en funktion från flask som heter url_for(). Den funktionen gör att vi kan skriva sökvägen till en sida utan att behöva skriva in den manuellt.
+
+Vi börjar med att skriva om vår exempel.html-fil så att den ser ut såhär:
+
+{% extends "template.html" %}
+{% block content %}
+    Exempel
+    <a href="{{ url_for('index') }}">Tillbaka</a>
+{% endblock %}
+
+Notera att vi använder funktionens namn som en sträng i url_for() och inte sökvägen till funktionen. 
+Detta är för att flask ska kunna hitta funktionen och skapa en sökväg till den
+
+@app.route("/exempel/", strict_slashes=False)
+@app.route("/exempel/<name>")
+def exempel(name="World"):
+    return render_template("exempel.html", your_name=name)
+
+Kodsammanfattning
+
+På rad 1 så lägger vi till en route som inte tar någon variabel. 
+För att göra det möjligt att skriva både /exempel och /exempel/ (notera snedstrecket), så sätter vi strict_slashes till False,
+
+the row class is used to create a flex container, and the col-md-6 classes are used to divide the row 
+into two equal-width columns on medium-sized screens and larger. Adjust the column widths as needed based on your design preferences.

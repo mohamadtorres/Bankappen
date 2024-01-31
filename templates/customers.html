@@ -1,0 +1,51 @@
+{% extends 'template.html' %}
+
+
+{% block content %}
+  <div class="container mt-4 text-center" style="padding: 15px; margin-left: 20px;"> 
+    <h2>Alla Kunder</h2><br>
+  </div>
+  <div>
+    <table class="table" style="padding: 15px; margin-left: 20px;"> 
+      <thead>
+        <tr>
+          <th>KundID</th>
+          <th>Namn</th>
+          <th>Address</th>
+          <th>Email</th>
+          <th>Saldo (SEK)</th> 
+          
+        </tr>
+      </thead>
+      <tbody>
+        {% for customer in customers_paginated.items %}
+          <tr>
+            <td>{{ customer.id }}</td>
+
+            <td>{{ customer.namn }}</td>
+            <td>{{ customer.address }}</td>
+            <td>{{ customer.email }}</td>
+            <td>{{ customer.total_balance }}</td>
+            
+          </tr>
+        {% endfor %}
+      </tbody>
+    </table>
+
+    <div class="pagination" style="padding: 15px; margin-left: 20px;">
+      {% if customers_paginated.has_prev %}
+        <a href="{{ url_for('customers', page=customers_paginated.prev_num) }}">« Previous</a>
+      {% else %}
+        <span class="disabled">« Previous</span>
+      {% endif %}
+
+      Page {{ customers_paginated.page }} of {{ customers_paginated.pages }}
+
+      {% if customers_paginated.has_next %}
+        <a href="{{ url_for('customers', page=customers_paginated.next_num) }}">Next »</a>
+      {% else %}
+        <span class="disabled">Next »</span>
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}

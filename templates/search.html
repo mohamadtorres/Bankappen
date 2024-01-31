@@ -1,0 +1,46 @@
+{% extends 'template.html' %}
+
+{% block content %}
+<div class="search-container">
+    <form class="search-form" action="{{ url_for('search') }}" method="GET">
+        <input class="search-input" type="text" name="search_query" id="search_query" placeholder="Ange KundID eller Personnummer" required>
+        <button class="search-button" type="submit">Sök:</button>
+    </form>
+</div>
+<div class="search-container1">
+    {% if results %}
+        <h3>Search Results:</h3>
+        {% for customer in results %}
+            <table class="table" style="padding: 15px">
+                <thead>
+                    <tr>
+                        <th>KundID</th>
+                        <th>Namn</th>
+                        <th>Address</th>
+                        <th>Email</th>
+                        <th>Saldo (SEK)</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <tr>
+                        <td>{{ customer.id }}</td>
+                        <td>{{ customer.namn }}</td>
+                        <td>{{ customer.address }}</td>
+                        <td>{{ customer.email }}</td>
+                        <td>{{ customer.total_balance }}</td>
+                        <td>
+                            {% for account in customer.accounts %}
+                                <a href="{{ url_for('accounttransactions', account_id=account.id) }}">View Transactions</a>
+                            {% endfor %}
+                        </td>
+                    </tr>
+                </tbody>
+            </table>
+        {% endfor %}
+    {% else %}
+        <p>No results found.</p>
+    {% endif %}
+</div>
+{% endblock %}
+

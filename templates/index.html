@@ -1,0 +1,17 @@
+{% extends 'template.html' %}
+
+{% block content %}
+<div style="text-align: center; margin-top: 20px;"> 
+  <h2>Bank Översikt</h2>
+</div>
+
+<div>
+  <div class="kontoindex" style="text-align: center">
+    <p><strong>Antal Kunder:</strong><br> {{ total_customers }}</p>
+  </div>
+
+  <div class="kontoindex" style="text-align: center">
+    <p><strong>Saldo hos oss idag: <em>(SEK)</em></strong><br> {{ total_balance }}</p>
+  </div>
+</div>
+{% endblock %}

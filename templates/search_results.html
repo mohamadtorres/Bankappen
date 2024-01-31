@@ -1,0 +1,23 @@
+{% extends 'template.html' %}
+
+{% block content %}
+<div class="customer-details-container">
+    <h3>Customer Details</h3>
+    {% for result in results %}
+        <p><strong>KundID:</strong> {{ result.id }}</p>
+        <p><strong>Namn:</strong> {{ result.namn }}</p>
+        <p><strong>Address:</strong> {{ result.address }}</p>
+        <p><strong>Email:</strong> {{ result.email }}</p>
+        <p><strong>Saldo (SEK):</strong> {{ result.total_balance }}</p>
+
+        <h4>Customer Accounts</h4>
+        <ul>
+            {% for account in result.accounts %}
+                <li>
+                    <a href="{{ url_for('accounttransactions', account_id=account.id) }}">Account {{ account.account_number }}</a>
+                </li>
+            {% endfor %}
+        </ul>
+    {% endfor %}
+</div>
+{% endblock %}
