@@ -31,8 +31,8 @@
                         <td>{{ customer.personnummer }}</td>
                         <td>{{ customer.city }}</td>
                         <td><a href="{{ url_for('accounttransactions', account_id=customer.accounts[0].id) }}">{{ customer.accounts[0].account_number }}</a></td>
-                        <td><a href="{{ url_for('accounttransactions', account_id=customer.accounts[1].id) }}">{{ customer.accounts[1].account_number }}</a></td>
-                        <td><a href="{{ url_for('accounttransactions', account_id=customer.accounts[2].id) }}">{{ customer.accounts[2].account_number }}</a></td>
+                        <td>{% if customer.accounts|length > 1 %}<a href="{{ url_for('accounttransactions', account_id=customer.accounts[1].id) }}">{{ customer.accounts[1].account_number }}</a>{% endif %}</td>
+                        <td>{% if customer.accounts|length > 2 %}<a href="{{ url_for('accounttransactions', account_id=customer.accounts[2].id) }}">{{ customer.accounts[2].account_number }}</a>{% endif %}</td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -43,4 +43,3 @@
     {% endif %}
 </div>
 {% endblock %}
-

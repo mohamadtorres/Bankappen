@@ -29,6 +29,19 @@
             {% endfor %}
         </tbody>
     </table>
+    <div>
+        {% for page_num in transactions_paginated.iter_pages() %}
+            {% if page_num %}
+                {% if transactions_paginated.page == page_num %}
+                    <strong>{{ page_num }}</strong>
+                {% else %}
+                    <a href="{{ url_for('accounttransactions', account_id=account.id, order=order, page=page_num) }}">{{ page_num }}</a>
+                {% endif %}
+            {% else %}
+                <span class="ellipsis">...</span>
+            {% endif %}
+        {% endfor %}
+    </div>
     {% if transactions_paginated.has_next %}
         <a href="{{ url_for('accounttransactions', account_id=account.id, order=order, page=transactions_paginated.next_num) }}">Next</a>
     {% endif %}

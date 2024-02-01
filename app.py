@@ -21,10 +21,6 @@ app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:golestan5@l
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
 
-app.config["SESSION_PERMANENT"] = False
-app.config["SESSION_TYPE"] = "filesystem"
-Session(app)
-
 #skapa en instans av sqlalchemy som heter db
 db = SQLAlchemy(app)
 
@@ -139,16 +135,15 @@ def seed_data(total: int) -> None:
             for _ in range(random.randint(1, 3)):
                 account_number = f.random_number(digits=15)
                 initial_deposit = 5000.0
-                balance = initial_deposit
 
-                account = Account(account_number=account_number, balance=balance)
+                account = Account(account_number=account_number, balance=initial_deposit)
                 person.accounts.append(account)
 
-                # Add initial deposit transaction
+                # Add initial deposit transaction with a fixed date
                 initial_deposit_transaction = Transaction(
                     amount=initial_deposit,
                     transaction_type='Insättning',
-                    timestamp=f.date_time_this_decade()
+                    timestamp=datetime.datetime(2017, 12, 15)  # Set a fixed initial date
                 )
                 account.transactions.append(initial_deposit_transaction)
 
@@ -172,7 +167,6 @@ def seed_data(total: int) -> None:
             db.session.commit()
 
             total_person += 1
-
 
 
 
@@ -276,7 +270,7 @@ def accounttransactions(account_id):
     if account:
         # Get the sorting order from the request
         order = request.args.get('order', 'desc')  # Set the default order to 'desc'
-        
+
         # Determine the column to sort by and the order
         sort_column = Transaction.timestamp
         if order == 'asc':
@@ -284,16 +278,19 @@ def accounttransactions(account_id):
         else:
             sort_column = sort_column.desc()
 
-        # Fetch the transactions, sorted accordingly
+        # Get the page from the request
+        page = request.args.get('page', 1, type=int)
+
+        # Set the number of transactions per page
+        per_page = 10
+
+        # Fetch the transactions, sorted accordingly and paginated
         transactions_paginated = Transaction.query \
             .filter_by(account_id=account.id) \
             .order_by(sort_column) \
-            .paginate(page=1, per_page=10, error_out=False)
+            .paginate(page=page, per_page=per_page, error_out=False)
 
-        # Calculate the total balance for the account
-        total_balance = db.session.query(func.sum(Transaction.amount)).filter_by(account_id=account.id).scalar() or 0
-
-        return render_template('account_transactions.html', account=account, transactions_paginated=transactions_paginated, total_balance=total_balance, order=order)
+        return render_template('account_transactions.html', account=account, transactions_paginated=transactions_paginated, order=order)
 
     # If the account is not found, handle the error appropriately
     return redirect(url_for('search'))
