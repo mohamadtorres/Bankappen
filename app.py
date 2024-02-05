@@ -1,5 +1,5 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
-from flask_sqlalchemy import SQLAlchemy
+from flask_sqlalchemy import SQLAlchemy,pagination
 from sqlalchemy import or_
 from faker import Faker
 import random
@@ -220,7 +220,8 @@ from sqlalchemy import or_
 def search():
     search_query = request.args.get("search_query")
     page = request.args.get('page', 1, type=int)
-    per_page = 7  # 8blev för mycket
+    per_page = 7  # Number of results per page
+    search_option = request.args.get('search_option', 'id')  # Get the selected search option
 
     try:
         if search_query is not None:
@@ -230,20 +231,21 @@ def search():
     except ValueError:
         search_query_int = None
 
-    # Determine whether to search by ID or personnummer based on the length of the input
-    if search_query_int is not None and 1 <= len(str(search_query_int)) <= 3:
-        # Search by ID
-        results = Customer.query.filter_by(id=search_query_int).paginate(page=page, per_page=per_page, error_out=False)
-    elif search_query_int is not None and len(str(search_query_int)) == 10:
-        # Search by personnummer
-        results = Customer.query.filter_by(personnummer=str(search_query_int)).paginate(page=page, per_page=per_page, error_out=False)
-    else:
-        # Perform the search using a case-insensitive comparison for personnummer
-        results = Customer.query.filter(
-            Customer.personnummer.like(f"%{search_query}%")
-        ).paginate(page=page, per_page=per_page, error_out=False)
+    # Define a dictionary to map search options to corresponding filters
+    search_option_filters = {
+        'id': Customer.id == search_query_int,
+        'personnummer': Customer.personnummer.like(f"%{search_query}%"),
+        'city': Customer.city.like(f"%{search_query}%"),
+        'name': Customer.namn.like(f"%{search_query}%"),
+    }
 
-    return render_template("search.html", results=results, search_query=search_query)
+    # Use the selected search option to filter the results
+    query = Customer.query.filter(search_option_filters.get(search_option, False))
+    results = query.paginate(page=page, per_page=per_page, error_out=False)
+
+    return render_template("search.html", results=results, search_query=search_query, search_option=search_option)
+
+
 
 @app.route('/searchresults/<query>')
 def searchresults(query):
