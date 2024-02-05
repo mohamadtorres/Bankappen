@@ -214,35 +214,34 @@ def template():
 
 
 
+from sqlalchemy import or_
+
 @app.route("/search", methods=["GET"])
 def search():
     search_query = request.args.get("search_query")
+    search_option = request.args.get("search_option")
     page = request.args.get('page', 1, type=int)
     per_page = 10
     customers_paginated = Customer.query.paginate(page=page, per_page=per_page)
 
-    try:
-        if search_query is not None:
-            search_query_int = int(search_query)  # Attempt to convert to integer
-        else:
-            search_query_int = None
-    except ValueError:
-        search_query_int = None
+    results = []
 
-    # Determine whether to search by ID or personnummer based on the length of the input
-    if search_query_int is not None and 1 <= len(str(search_query_int)) <= 3:
-        # Search by ID
-        results = Customer.query.filter_by(id=search_query_int).all()
-    elif search_query_int is not None and len(str(search_query_int)) == 10:
-        # Search by personnummer
-        results = Customer.query.filter_by(personnummer=str(search_query_int)).all()
-    else:
-        # Perform the search using a case-insensitive comparison for personnummer
-        results = Customer.query.filter(
-            Customer.personnummer.like(f"%{search_query}%")
-        ).all()
+    if search_query:
+        if search_option == "id" and search_query.isdigit():
+            # Search by ID
+            results = Customer.query.filter_by(id=int(search_query)).all()
+        elif search_option == "personnummer" and len(search_query) == 10:
+            # Search by personnummer
+            results = Customer.query.filter_by(personnummer=search_query).all()
+        elif search_option == "city":
+            # Search by City (case-insensitive)
+            results = Customer.query.filter(Customer.city.ilike(f"%{search_query}%")).all()
+        elif search_option == "name":
+            # Search by Name (case-insensitive)
+            results = Customer.query.filter(Customer.namn.ilike(f"%{search_query}%")).all()
 
     return render_template("search.html", results=results, search_query=search_query, customers_paginated=customers_paginated)
+
 
 
 

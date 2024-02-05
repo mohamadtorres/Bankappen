@@ -3,8 +3,21 @@
 {% block content %}
 <div class="search-container">
     <form class="search-form" action="{{ url_for('search') }}" method="GET">
-        <input class="search-input" type="text" name="search_query" id="search_query" placeholder="Ange KundID eller Personnummer" required>
-        <button class="search-button" type="submit">Sök:</button>
+        <input class="search-input" type="text" name="search_query" id="search_query" placeholder="Enter search query" required>
+        <div class="search-options">
+            <label for="search_by_id">Search by ID:</label>
+            <input type="radio" name="search_option" value="id" id="search_by_id" required>
+            
+            <label for="search_by_personnummer">Search by Personnummer:</label>
+            <input type="radio" name="search_option" value="personnummer" id="search_by_personnummer" required>
+            
+            <label for="search_by_city">Search by City:</label>
+            <input type="radio" name="search_option" value="city" id="search_by_city" required>
+            
+            <label for="search_by_name">Search by Name:</label>
+            <input type="radio" name="search_option" value="name" id="search_by_name" required>
+        </div>
+        <button class="search-button" type="submit">Search</button>
     </form>
 </div>
 <div class="search-container1">
