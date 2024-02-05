@@ -3,7 +3,7 @@
 {% block content %}
 <div class="search-container">
     <form class="search-form" action="{{ url_for('search') }}" method="GET">
-        <input class="search-input" type="text" name="search_query" id="search_query" placeholder="Enter search query" required>
+        <input class="search-input" type="text" name="search_query" id="search_query" placeholder="Välj vad vill du söka efter" required>
         <div class="search-options">
             <label for="search_by_id">ID</label>
             <input type="radio" name="search_option" value="id" id="search_by_id" required>
@@ -14,7 +14,7 @@
             <label for="search_by_city">City</label>
             <input type="radio" name="search_option" value="city" id="search_by_city" required>
             
-            <label for="search_by_name">Namn:</label>
+            <label for="search_by_name">Namn</label>
             <input type="radio" name="search_option" value="name" id="search_by_name" required>
         </div>
         <button class="search-button" type="submit">Search</button>
@@ -22,22 +22,24 @@
 </div>
 <div class="search-container1">
     {% if results %}
-        <h3>Search Results:</h3>
+        <h3>Resultat:</h3>
         <table class="table">
             <thead>
                 <tr>
+                    <th>ID</th>
                     <th>Namn</th>
                     <th>Email</th>
                     <th>Personnummer</th>
                     <th>City</th>
-                    <th>Account 1</th>
-                    <th>Account 2</th>
-                    <th>Account 3</th>
+                    <th>Huvudkonto</th>
+                    <th>Sparkonto 1</th>
+                    <th>Sparkonto 2</th>
                 </tr>
             </thead>
             <tbody>
                 {% for customer in results.items %}
                     <tr>
+                        <td>{{ customer.id }}</td>
                         <td>{{ customer.namn }}</td>
                         <td>{{ customer.email }}</td>
                         <td>{{ customer.personnummer }}</td>
@@ -53,15 +55,11 @@
         <div class="pagination">
             <ul class="pagination-list">
                 {% if results.has_prev %}
-                    <li><a href="{{ url_for('search', page=results.prev_num, search_query=search_query, search_option=request.args.get('search_option')) }}">Previous</a></li>
+                    <li><a href="{{ url_for('search', page=results.prev_num, search_query=search_query, search_option=request.args.get('search_option')) }}"><< Previous</a></li>
                 {% endif %}
-                {% for page_num in results.iter_pages() %}
-                    <li class="{% if page_num == results.page %}active{% endif %}">
-                        <a href="{{ url_for('search', page=page_num, search_query=search_query, search_option=request.args.get('search_option')) }}">{{ page_num }}</a>
-                    </li>
-                {% endfor %}
+                <li>Sidan {{ results.page }} av {{ results.pages }}</li>
                 {% if results.has_next %}
-                    <li><a href="{{ url_for('search', page=results.next_num, search_query=search_query, search_option=request.args.get('search_option')) }}">Next</a></li>
+                    <li><a href="{{ url_for('search', page=results.next_num, search_query=search_query, search_option=request.args.get('search_option')) }}">Next >></a></li>
                 {% endif %}
             </ul>
         </div>
