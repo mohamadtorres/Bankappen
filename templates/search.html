@@ -5,16 +5,16 @@
     <form class="search-form" action="{{ url_for('search') }}" method="GET">
         <input class="search-input" type="text" name="search_query" id="search_query" placeholder="Enter search query" required>
         <div class="search-options">
-            <label for="search_by_id">Search by ID:</label>
+            <label for="search_by_id">ID</label>
             <input type="radio" name="search_option" value="id" id="search_by_id" required>
             
-            <label for="search_by_personnummer">Search by Personnummer:</label>
+            <label for="search_by_personnummer">Personnummer</label>
             <input type="radio" name="search_option" value="personnummer" id="search_by_personnummer" required>
             
-            <label for="search_by_city">Search by City:</label>
+            <label for="search_by_city">City</label>
             <input type="radio" name="search_option" value="city" id="search_by_city" required>
             
-            <label for="search_by_name">Search by Name:</label>
+            <label for="search_by_name">Namn:</label>
             <input type="radio" name="search_option" value="name" id="search_by_name" required>
         </div>
         <button class="search-button" type="submit">Search</button>
@@ -23,7 +23,6 @@
 <div class="search-container1">
     {% if results %}
         <h3>Search Results:</h3>
-        {% for customer in results %}
         <table class="table">
             <thead>
                 <tr>
@@ -37,7 +36,7 @@
                 </tr>
             </thead>
             <tbody>
-                {% for customer in results %}
+                {% for customer in results.items %}
                     <tr>
                         <td>{{ customer.namn }}</td>
                         <td>{{ customer.email }}</td>
@@ -50,7 +49,22 @@
                 {% endfor %}
             </tbody>
         </table>
-        {% endfor %}
+        
+        <div class="pagination">
+            <ul class="pagination-list">
+                {% if results.has_prev %}
+                    <li><a href="{{ url_for('search', page=results.prev_num, search_query=search_query) }}">Previous</a></li>
+                {% endif %}
+                {% for page_num in results.iter_pages() %}
+                    <li class="{% if page_num == results.page %}active{% endif %}">
+                        <a href="{{ url_for('search', page=page_num, search_query=search_query) }}">{{ page_num }}</a>
+                    </li>
+                {% endfor %}
+                {% if results.has_next %}
+                    <li><a href="{{ url_for('search', page=results.next_num, search_query=search_query) }}">Next</a></li>
+                {% endif %}
+            </ul>
+        </div>
     {% else %}
         <p>No results found.</p>
     {% endif %}

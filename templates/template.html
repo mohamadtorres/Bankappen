@@ -1,5 +1,3 @@
-
-
 <!DOCTYPE html>
 <html lang="en">
 <head>
@@ -67,7 +65,7 @@
         }
 
         .search-container {
-            max-width: 400px;
+            max-width: 800px; /* Increased the max-width */
             margin: 0 auto;
             padding: 20px;
             background-color: #f2f2f2;
@@ -75,27 +73,30 @@
             box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
         }
 
-
-
-        .search-container1 {
-            margin: 10 auto;
-            padding: 20px;
-        }
-        .search-form {
+        .search-container .search-form {
             display: flex;
             align-items: center;
         }
 
-        .search-input {
+        .search-container .search-input {
             flex: 1;
             padding: 10px;
             border: 1px solid #ccc;
             border-radius: 5px;
         }
 
-        .search-button {
-            padding: 10px 20px;
+        .search-container .search-options {
+            display: flex;
+            align-items: center;
             margin-left: 10px;
+        }
+
+        .search-container .search-options label {
+            margin-right: 5px;
+        }
+
+        .search-container .search-button {
+            padding: 10px 20px;
             background-color: #007bff;
             color: white;
             border: none;
@@ -103,6 +104,7 @@
             cursor: pointer;
             transition: background-color 0.3s ease;
         }
+
         .container {
             display: flex;
             justify-content: space-between;
@@ -140,7 +142,6 @@
         <a href="{{url_for('customers')}}">Alla Kunder</a>
         <a href="{{url_for('search')}}">Sök</a>
         <a href="#">Kontaka Oss</a>
-
     </nav>
 
     {% block content %} 
