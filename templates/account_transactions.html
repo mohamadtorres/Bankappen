@@ -2,6 +2,7 @@
 
 {% block content %}
     <h3>Transactions for {{ account.customer.namn }}</h3>
+    <p>Total Balance: <strong>{{ total_balance|round(2) }} SEK</strong></p>
     <table class="table">
         <thead>
             <tr>

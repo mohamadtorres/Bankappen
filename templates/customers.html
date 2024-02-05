@@ -1,6 +1,5 @@
 {% extends 'template.html' %}
 
-
 {% block content %}
   <div class="container mt-4 text-center" style="padding: 15px; margin-left: 20px;"> 
     <h2>Alla Kunder</h2><br>
@@ -12,21 +11,21 @@
           <th>KundID</th>
           <th>Namn</th>
           <th>Address</th>
+          <th>City</th>
           <th>Email</th>
           <th>Saldo (SEK)</th> 
-          
         </tr>
       </thead>
       <tbody>
         {% for customer in customers_paginated.items %}
           <tr>
             <td>{{ customer.id }}</td>
+            <td><a href="{{ url_for('customers', customer_id=customer.id) }}">{{ customer.namn }}</a></td>
 
-            <td>{{ customer.namn }}</td>
             <td>{{ customer.address }}</td>
+            <td>{{ customer.city }}</td>
             <td>{{ customer.email }}</td>
             <td>{{ customer.total_balance }}</td>
-            
           </tr>
         {% endfor %}
       </tbody>

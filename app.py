@@ -7,6 +7,9 @@ from flask_session import Session
 from flask_paginate import Pagination
 #func för varje konto att se deras saldo
 from sqlalchemy.sql import func
+from datetime import datetime
+from sqlalchemy import asc
+
 
 app = Flask(__name__)
 
@@ -38,13 +41,10 @@ class Customer(db.Model):
     def __repr__(self):
         return f"<Customer {self.namn} - Email: {self.email}>"
     
-    #för att kunna visa varje kunds saldo
+    # För att kunna visa varje kunds saldo
     @property
     def total_balance(self):
-        return sum(account.balance for account in self.accounts)
-    @property
-    def total_balance(self):
-        return sum(account.balance for account in self.accounts)
+        return round(sum(account.balance for account in self.accounts), 2)
 
     @total_balance.setter
     def total_balance(self, value):
@@ -143,7 +143,7 @@ def seed_data(total: int) -> None:
                 initial_deposit_transaction = Transaction(
                     amount=initial_deposit,
                     transaction_type='Insättning',
-                    timestamp=datetime.datetime(2017, 12, 15)  # Set a fixed initial date
+                    timestamp = datetime(2017, 12, 15)
                 )
                 account.transactions.append(initial_deposit_transaction)
 
@@ -202,7 +202,10 @@ def login():
 def customers():
     page = request.args.get('page', 1, type=int)
     per_page = 10
-    customers_paginated = Customer.query.paginate(page=page, per_page=per_page)
+
+    # Order the customers by their ID in descending order
+    customers_paginated = Customer.query.order_by(asc(Customer.id)).paginate(page=page, per_page=per_page)
+
     return render_template("customers.html", customers_paginated=customers_paginated)
 
 @app.route("/template")
@@ -268,6 +271,9 @@ def accounttransactions(account_id):
     account = Account.query.get(account_id)
 
     if account:
+        # Calculate the total balance of the account
+        total_balance = sum(transaction.amount for transaction in account.transactions)
+
         # Get the sorting order from the request
         order = request.args.get('order', 'desc')  # Set the default order to 'desc'
 
@@ -290,7 +296,7 @@ def accounttransactions(account_id):
             .order_by(sort_column) \
             .paginate(page=page, per_page=per_page, error_out=False)
 
-        return render_template('account_transactions.html', account=account, transactions_paginated=transactions_paginated, order=order)
+        return render_template('account_transactions.html', account=account, transactions_paginated=transactions_paginated, order=order, total_balance=total_balance)
 
     # If the account is not found, handle the error appropriately
     return redirect(url_for('search'))
