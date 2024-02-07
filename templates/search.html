@@ -28,9 +28,10 @@
                 <tr>
                     <th>ID</th>
                     <th>Namn</th>
-                    <th>Email</th>
                     <th>Personnummer</th>
+                    <th>Address</th>
                     <th>City</th>
+                    <th>Total Saldo</th>
                     <th>Huvudkonto</th>
                     <th>Sparkonto 1</th>
                     <th>Sparkonto 2</th>
@@ -41,9 +42,10 @@
                     <tr>
                         <td>{{ customer.id }}</td>
                         <td>{{ customer.namn }}</td>
-                        <td>{{ customer.email }}</td>
                         <td>{{ customer.personnummer }}</td>
+                        <td>{{ customer.address }}</td>
                         <td>{{ customer.city }}</td>
+                        <td>{{ customer.total_balance }}</td>
                         <td><a href="{{ url_for('accounttransactions', account_id=customer.accounts[0].id) }}">{{ customer.accounts[0].account_number }}</a></td>
                         <td>{% if customer.accounts|length > 1 %}<a href="{{ url_for('accounttransactions', account_id=customer.accounts[1].id) }}">{{ customer.accounts[1].account_number }}</a>{% endif %}</td>
                         <td>{% if customer.accounts|length > 2 %}<a href="{{ url_for('accounttransactions', account_id=customer.accounts[2].id) }}">{{ customer.accounts[2].account_number }}</a>{% endif %}</td>

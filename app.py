@@ -1,6 +1,6 @@
 from flask import Flask, render_template, request, jsonify, redirect, url_for, session
 from flask_sqlalchemy import SQLAlchemy,pagination
-from sqlalchemy import or_
+from sqlalchemy import or_,func
 from faker import Faker
 import random
 from flask_session import Session
@@ -9,6 +9,7 @@ from flask_paginate import Pagination
 from sqlalchemy.sql import func
 from datetime import datetime
 from sqlalchemy import asc
+from sqlalchemy.orm import joinedload  # Import joinedload to load related accounts
 
 
 app = Flask(__name__)
@@ -89,6 +90,7 @@ def create_tables():
     with app.app_context():
         db.create_all()
 
+
 def seed_data(total: int) -> None:
     with app.app_context():
         f = Faker('sv_SE')
@@ -143,7 +145,8 @@ def seed_data(total: int) -> None:
                 initial_deposit_transaction = Transaction(
                     amount=initial_deposit,
                     transaction_type='Insättning',
-                    timestamp = datetime(2017, 12, 15)
+                    timestamp=datetime(2017, 12, 15),
+                    account=account  # Associate the transaction with the account
                 )
                 account.transactions.append(initial_deposit_transaction)
 
@@ -156,8 +159,15 @@ def seed_data(total: int) -> None:
                     transaction = Transaction(
                         amount=amount,
                         transaction_type=transaction_type,
-                        timestamp=timestamp
+                        timestamp=timestamp,
+                        account=account  # Associate the transaction with the account
                     )
+
+                    # Update the account balance based on the transaction type
+                    if transaction_type == 'Insättning':
+                        account.balance += amount
+                    elif transaction_type == 'Uttag':
+                        account.balance -= amount
 
                     account.transactions.append(transaction)
 
@@ -167,7 +177,6 @@ def seed_data(total: int) -> None:
             db.session.commit()
 
             total_person += 1
-
 
 
 
@@ -241,10 +250,14 @@ def search():
 
     # Use the selected search option to filter the results
     query = Customer.query.filter(search_option_filters.get(search_option, False))
+
+    # Calculate the total balance for each customer
     results = query.paginate(page=page, per_page=per_page, error_out=False)
+    for customer in results.items:
+        total_balance = sum(account.balance for account in customer.accounts)
+        customer.total_balance = total_balance
 
     return render_template("search.html", results=results, search_query=search_query, search_option=search_option)
-
 
 
 @app.route('/searchresults/<query>')
