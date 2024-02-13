@@ -45,7 +45,17 @@ class Customer(db.Model):
     # För att kunna visa varje kunds saldo
     @property
     def total_balance(self):
-        return round(sum(account.balance for account in self.accounts), 2)
+        total_balance = 0
+        for account in self.accounts:
+            # Calculate the balance based on transactions
+            balance = account.balance
+            for transaction in account.transactions:
+                if transaction.transaction_type == 'Insättning':
+                    balance += transaction.amount
+                elif transaction.transaction_type == 'Uttag':
+                    balance -= transaction.amount
+            total_balance += balance
+        return round(total_balance, 2)
 
     @total_balance.setter
     def total_balance(self, value):
@@ -136,12 +146,12 @@ def seed_data(total: int) -> None:
             # Add accounts to the customer
             for _ in range(random.randint(1, 3)):
                 account_number = f.random_number(digits=15)
-                initial_deposit = 5000.0
 
-                account = Account(account_number=account_number, balance=initial_deposit)
+                account = Account(account_number=account_number)
                 person.accounts.append(account)
 
                 # Add initial deposit transaction with a fixed date
+                initial_deposit = 5000.0
                 initial_deposit_transaction = Transaction(
                     amount=initial_deposit,
                     transaction_type='Insättning',
@@ -149,6 +159,9 @@ def seed_data(total: int) -> None:
                     account=account  # Associate the transaction with the account
                 )
                 account.transactions.append(initial_deposit_transaction)
+
+                # Set the initial balance based on the initial deposit
+                account.balance = initial_deposit
 
                 # Add random transactions to the account
                 for _ in range(random.randint(5, 20)):
@@ -163,13 +176,13 @@ def seed_data(total: int) -> None:
                         account=account  # Associate the transaction with the account
                     )
 
+                    account.transactions.append(transaction)
+
                     # Update the account balance based on the transaction type
                     if transaction_type == 'Insättning':
                         account.balance += amount
                     elif transaction_type == 'Uttag':
                         account.balance -= amount
-
-                    account.transactions.append(transaction)
 
                 db.session.add(account)
 
@@ -177,6 +190,7 @@ def seed_data(total: int) -> None:
             db.session.commit()
 
             total_person += 1
+
 
 
 
@@ -229,18 +243,17 @@ from sqlalchemy import or_
 def search():
     search_query = request.args.get("search_query")
     page = request.args.get('page', 1, type=int)
-    per_page = 7  # Number of results per page
-    search_option = request.args.get('search_option', 'id')  # Get the selected search option
+    per_page = 7 
+    search_option = request.args.get('search_option', 'id') 
 
     try:
         if search_query is not None:
-            search_query_int = int(search_query)  # Attempt to convert to integer
+            search_query_int = int(search_query)
         else:
             search_query_int = None
     except ValueError:
         search_query_int = None
 
-    # Define a dictionary to map search options to corresponding filters
     search_option_filters = {
         'id': Customer.id == search_query_int,
         'personnummer': Customer.personnummer.like(f"%{search_query}%"),
@@ -248,37 +261,19 @@ def search():
         'name': Customer.namn.like(f"%{search_query}%"),
     }
 
-    # Use the selected search option to filter the results
+
     query = Customer.query.filter(search_option_filters.get(search_option, False))
 
-    # Calculate the total balance for each customer
+    # Fetch the results along with the total balance for each customer
     results = query.paginate(page=page, per_page=per_page, error_out=False)
     for customer in results.items:
-        total_balance = sum(account.balance for account in customer.accounts)
+        total_balance = 0
+        for account in customer.accounts:
+            total_balance += account.balance
         customer.total_balance = total_balance
 
     return render_template("search.html", results=results, search_query=search_query, search_option=search_option)
 
-
-@app.route('/searchresults/<query>')
-def searchresults(query):
-    # Query the database to find customers based on the search query
-    results = Customer.query.filter(
-        (Customer.namn.ilike(f'%{query}%')) | (Customer.email.ilike(f'%{query}%'))
-    ).all()
-
-    # Fetch the last 10 transactions for each account associated with the customer
-    for customer in results:
-        for account in customer.accounts:
-            account.last_10_transactions = (
-                Transaction.query.filter_by(account_id=account.id)
-                .order_by(Transaction.timestamp.desc())
-                .limit(10)
-                .all()
-            )
-
-    # Render the search results page with the additional transaction information
-    return render_template('search_results.html', results=results)
 
 @app.route('/accounttransactions/<account_id>', methods=['GET'])
 def accounttransactions(account_id):
