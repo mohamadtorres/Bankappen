@@ -310,6 +310,77 @@ def accounttransactions(account_id):
     # If the account is not found, handle the error appropriately
     return redirect(url_for('search'))
 
+from datetime import datetime
+
+@app.route("/deposit", methods=["GET", "POST"])
+def deposit():
+    if request.method == "POST":
+        account_number = request.form.get("account_number")
+        deposit_amount = float(request.form.get("deposit_amount"))
+
+        account = Account.query.filter_by(account_number=account_number).first()
+
+        if not account:
+            error_message = "Account not found. Please enter a valid account number."
+            return render_template("deposit.html", error_message=error_message)
+
+        if deposit_amount <= 0:
+            error_message = "Invalid deposit amount. Please enter a positive number."
+            return render_template("deposit.html", error_message=error_message)
+
+        # Update the account balance with the deposit amount
+        account.balance += deposit_amount
+
+        # Add a new transaction for the deposit
+        deposit_transaction = Transaction(
+            amount=deposit_amount,
+            transaction_type='Insättning',
+            timestamp=datetime.now(),
+            account=account
+        )
+        db.session.add(deposit_transaction)
+        db.session.commit()
+
+        return render_template("deposit_success.html", account=account, deposit_amount=deposit_amount, deposit_transaction=deposit_transaction)
+
+    return render_template("deposit.html")
+
+@app.route("/withdrawal", methods=["GET", "POST"])
+def withdrawal():
+    if request.method == "POST":
+        account_number = request.form.get("account_number")
+        withdrawal_amount = float(request.form.get("withdrawal_amount"))
+
+        account = Account.query.filter_by(account_number=account_number).first()
+
+        if not account:
+            error_message = "Account not found. Please enter a valid account number."
+            return render_template("withdrawal.html", error_message=error_message)
+
+        if withdrawal_amount <= 0:
+            error_message = "Invalid withdrawal amount. Please enter a positive number."
+            return render_template("withdrawal.html", error_message=error_message)
+
+        if withdrawal_amount > account.balance:
+            error_message = "Insufficient funds. Cannot withdraw more than the available balance."
+            return render_template("withdrawal.html", error_message=error_message)
+
+        # Update the account balance with the withdrawal amount
+        account.balance -= withdrawal_amount
+
+        # Add a new transaction for the withdrawal
+        withdrawal_transaction = Transaction(
+            amount=withdrawal_amount,
+            transaction_type='Uttag',
+            timestamp=datetime.now(),
+            account=account
+        )
+        db.session.add(withdrawal_transaction)
+        db.session.commit()
+
+        return render_template("uttag_success.html", account=account, withdrawal_amount=withdrawal_amount)
+
+    return render_template("uttag.html")
 
 
 if __name__ == "__main__":

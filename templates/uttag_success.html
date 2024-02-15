@@ -1,0 +1,10 @@
+{% extends 'template.html' %}
+
+{% block content %}
+    <section>
+        <h2>Godkänd Uttag</h2>
+        <p>Godkänd uttag. {{ withdrawal_amount }} SEK från kontot {{ account.account_number }} som tillhör {{ account.customer.namn }}.</p>
+        <p>Transaktions Datum: {{ withdrawal_transaction.timestamp }}</p>
+        <p>Nya saldot är {{ account.balance }} SEK.</p>
+    </section>
+{% endblock %}
