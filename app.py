@@ -354,23 +354,24 @@ def withdrawal():
         account = Account.query.filter_by(account_number=account_number).first()
 
         if not account:
-            error_message = "Account not found. Please enter a valid account number."
-            return render_template("withdrawal.html", error_message=error_message)
+            error_message = "Kontot hittades inte. Vänligen försök igen"
+            return render_template("uttag.html", error_message=error_message)
 
         if withdrawal_amount <= 0:
-            error_message = "Invalid withdrawal amount. Please enter a positive number."
-            return render_template("withdrawal.html", error_message=error_message)
+            error_message = "Ogiltigt belopp. Försök igen"
+            return render_template("uttag.html", error_message=error_message)
 
         if withdrawal_amount > account.balance:
-            error_message = "Insufficient funds. Cannot withdraw more than the available balance."
-            return render_template("withdrawal.html", error_message=error_message)
+            error_message = "Det finns inte tillräckligt pengar på kontot."
+            return render_template("uttag.html", error_message=error_message)
 
-        # Update the account balance with the withdrawal amount
+
+        # Update the account balance by subtracting the withdrawal amount
         account.balance -= withdrawal_amount
 
         # Add a new transaction for the withdrawal
         withdrawal_transaction = Transaction(
-            amount=withdrawal_amount,
+            amount=-withdrawal_amount,  # Negative amount for withdrawal
             transaction_type='Uttag',
             timestamp=datetime.now(),
             account=account
@@ -378,9 +379,10 @@ def withdrawal():
         db.session.add(withdrawal_transaction)
         db.session.commit()
 
-        return render_template("uttag_success.html", account=account, withdrawal_amount=withdrawal_amount)
+        return render_template("uttag_success.html", account=account, withdrawal_amount=withdrawal_amount, withdrawal_transaction=withdrawal_transaction)
 
     return render_template("uttag.html")
+
 
 @app.route("/transfer", methods=["GET", "POST"])
 def transfer():
