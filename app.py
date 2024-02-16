@@ -393,15 +393,15 @@ def transfer():
         to_account = Account.query.filter_by(account_number=to_account_number).first()
 
         if not from_account or not to_account:
-            error_message = "Ett eller båda konton är fel. Vänligen dubbelkolla och försök igen"
+            error_message = "Ett eller båda två konton du har skrivit är fel. Försök igen"
             return render_template("transfer.html", error_message=error_message)
 
         if transfer_amount <= 0:
-            error_message = "Fel belopp. Vänligen skriv ett rätt belopp(mer än 0)"
+            error_message = "Du har anget ett ogiltigt belopp. Vänligen försök igen"
             return render_template("transfer.html", error_message=error_message)
 
         if transfer_amount > from_account.balance:
-            error_message = "Det finns inte tillräckligt pengar i första kontot. Vänligen försök igen"
+            error_message = "Det finns inte tillräckligt pengar på kontot."
             return render_template("transfer.html", error_message=error_message)
 
         # Update the balance of the accounts involved in the transfer
@@ -410,8 +410,8 @@ def transfer():
 
         # Add a new transaction for the transfer from the source account
         transfer_from_transaction = Transaction(
-            amount=transfer_amount,
-            transaction_type='Överföring',
+            amount=-transfer_amount,
+            transaction_type='Överföring från ett annat konto',
             timestamp=datetime.now(),
             account=from_account
         )
@@ -420,7 +420,7 @@ def transfer():
         # Add a new transaction for the transfer to the destination account
         transfer_to_transaction = Transaction(
             amount=transfer_amount,
-            transaction_type='Överföring',
+            transaction_type='Överföring till ett annat konto',
             timestamp=datetime.now(),
             account=to_account
         )
@@ -428,7 +428,7 @@ def transfer():
 
         db.session.commit()
 
-        return render_template("transfer_success.html", from_account=from_account, to_account=to_account, transfer_amount=transfer_amount)
+        return render_template("transfer_success.html", from_account=from_account, to_account=to_account, transfer_amount=transfer_amount, transfer_from_transaction=transfer_from_transaction, transfer_to_transaction=transfer_to_transaction)
 
     return render_template("transfer.html")
 
