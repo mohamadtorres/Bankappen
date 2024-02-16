@@ -411,7 +411,7 @@ def transfer():
         # Add a new transaction for the transfer from the source account
         transfer_from_transaction = Transaction(
             amount=-transfer_amount,
-            transaction_type='Överföring från ett annat konto',
+            transaction_type='Överföring till ett annat konto',
             timestamp=datetime.now(),
             account=from_account
         )
@@ -420,7 +420,7 @@ def transfer():
         # Add a new transaction for the transfer to the destination account
         transfer_to_transaction = Transaction(
             amount=transfer_amount,
-            transaction_type='Överföring till ett annat konto',
+            transaction_type='Överföring från ett annat konto',
             timestamp=datetime.now(),
             account=to_account
         )
