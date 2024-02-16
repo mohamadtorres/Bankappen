@@ -382,6 +382,56 @@ def withdrawal():
 
     return render_template("uttag.html")
 
+@app.route("/transfer", methods=["GET", "POST"])
+def transfer():
+    if request.method == "POST":
+        from_account_number = request.form.get("from_account_number")
+        to_account_number = request.form.get("to_account_number")
+        transfer_amount = float(request.form.get("transfer_amount"))
+
+        from_account = Account.query.filter_by(account_number=from_account_number).first()
+        to_account = Account.query.filter_by(account_number=to_account_number).first()
+
+        if not from_account or not to_account:
+            error_message = "Ett eller båda konton är fel. Vänligen dubbelkolla och försök igen"
+            return render_template("transfer.html", error_message=error_message)
+
+        if transfer_amount <= 0:
+            error_message = "Fel belopp. Vänligen skriv ett rätt belopp(mer än 0)"
+            return render_template("transfer.html", error_message=error_message)
+
+        if transfer_amount > from_account.balance:
+            error_message = "Det finns inte tillräckligt pengar i första kontot. Vänligen försök igen"
+            return render_template("transfer.html", error_message=error_message)
+
+        # Update the balance of the accounts involved in the transfer
+        from_account.balance -= transfer_amount
+        to_account.balance += transfer_amount
+
+        # Add a new transaction for the transfer from the source account
+        transfer_from_transaction = Transaction(
+            amount=transfer_amount,
+            transaction_type='Överföring',
+            timestamp=datetime.now(),
+            account=from_account
+        )
+        db.session.add(transfer_from_transaction)
+
+        # Add a new transaction for the transfer to the destination account
+        transfer_to_transaction = Transaction(
+            amount=transfer_amount,
+            transaction_type='Överföring',
+            timestamp=datetime.now(),
+            account=to_account
+        )
+        db.session.add(transfer_to_transaction)
+
+        db.session.commit()
+
+        return render_template("transfer_success.html", from_account=from_account, to_account=to_account, transfer_amount=transfer_amount)
+
+    return render_template("transfer.html")
+
 
 if __name__ == "__main__":
     create_tables()
