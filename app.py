@@ -78,12 +78,16 @@ class Account(db.Model):
     __tablename__ = 'account'
     id = db.Column(db.Integer, primary_key=True)
     account_number = db.Column(db.String(15), unique=True)
-    balance = db.Column(db.Float)
+    balance = db.Column(db.Float)  # Existing balance column
+
+    # New column to store balance after each transaction
+    saldo = db.Column(db.Float, default=0.0)  
 
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
     customer = db.relationship('Customer', back_populates='accounts')
 
     transactions = db.relationship('Transaction', back_populates='account')
+
 
 
 class Transaction(db.Model):
@@ -311,7 +315,6 @@ def accounttransactions(account_id):
     return redirect(url_for('search'))
 
 from datetime import datetime
-
 @app.route("/deposit", methods=["GET", "POST"])
 def deposit():
     if request.method == "POST":
@@ -330,6 +333,7 @@ def deposit():
 
         # Update the account balance with the deposit amount
         account.balance += deposit_amount
+        account.saldo += deposit_amount  # Update Saldo column with deposit amount
 
         # Add a new transaction for the deposit
         deposit_transaction = Transaction(
@@ -354,20 +358,20 @@ def withdrawal():
         account = Account.query.filter_by(account_number=account_number).first()
 
         if not account:
-            error_message = "Kontot hittades inte. Vänligen försök igen"
-            return render_template("uttag.html", error_message=error_message)
+            error_message = "Account not found. Please enter a valid account number."
+            return render_template("withdrawal.html", error_message=error_message)
 
         if withdrawal_amount <= 0:
-            error_message = "Ogiltigt belopp. Försök igen"
-            return render_template("uttag.html", error_message=error_message)
+            error_message = "Invalid withdrawal amount. Please enter a positive number."
+            return render_template("withdrawal.html", error_message=error_message)
 
         if withdrawal_amount > account.balance:
-            error_message = "Det finns inte tillräckligt pengar på kontot."
-            return render_template("uttag.html", error_message=error_message)
-
+            error_message = "Insufficient funds. Cannot withdraw more than the available balance."
+            return render_template("withdrawal.html", error_message=error_message)
 
         # Update the account balance by subtracting the withdrawal amount
         account.balance -= withdrawal_amount
+        account.saldo -= withdrawal_amount  # Update Saldo column with withdrawal amount
 
         # Add a new transaction for the withdrawal
         withdrawal_transaction = Transaction(
@@ -379,10 +383,9 @@ def withdrawal():
         db.session.add(withdrawal_transaction)
         db.session.commit()
 
-        return render_template("uttag_success.html", account=account, withdrawal_amount=withdrawal_amount, withdrawal_transaction=withdrawal_transaction)
+        return render_template("withdrawal_success.html", account=account, withdrawal_amount=withdrawal_amount, withdrawal_transaction=withdrawal_transaction)
 
-    return render_template("uttag.html")
-
+    return render_template("withdrawal.html")
 
 @app.route("/transfer", methods=["GET", "POST"])
 def transfer():
@@ -395,25 +398,29 @@ def transfer():
         to_account = Account.query.filter_by(account_number=to_account_number).first()
 
         if not from_account or not to_account:
-            error_message = "Ett eller båda två konton du har skrivit är fel. Försök igen"
+            error_message = "One or both of the accounts you entered is incorrect. Please try again."
             return render_template("transfer.html", error_message=error_message)
 
         if transfer_amount <= 0:
-            error_message = "Du har anget ett ogiltigt belopp. Vänligen försök igen"
+            error_message = "You have entered an invalid amount. Please try again."
             return render_template("transfer.html", error_message=error_message)
 
         if transfer_amount > from_account.balance:
-            error_message = "Det finns inte tillräckligt pengar på kontot."
+            error_message = "Insufficient funds. Cannot transfer more than the available balance."
             return render_template("transfer.html", error_message=error_message)
 
-        # Update the balance of the accounts involved in the transfer
+        # Update the balance of the source account by subtracting the transfer amount
         from_account.balance -= transfer_amount
+        from_account.saldo -= transfer_amount  # Update Saldo column of the source account
+
+        # Update the balance of the destination account by adding the transfer amount
         to_account.balance += transfer_amount
+        to_account.saldo += transfer_amount  # Update Saldo column of the destination account
 
         # Add a new transaction for the transfer from the source account
         transfer_from_transaction = Transaction(
             amount=-transfer_amount,
-            transaction_type='Överföring till ett annat konto',
+            transaction_type='Transfer to another account',
             timestamp=datetime.now(),
             account=from_account
         )
@@ -422,7 +429,7 @@ def transfer():
         # Add a new transaction for the transfer to the destination account
         transfer_to_transaction = Transaction(
             amount=transfer_amount,
-            transaction_type='Överföring från ett annat konto',
+            transaction_type='Transfer from another account',
             timestamp=datetime.now(),
             account=to_account
         )
