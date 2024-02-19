@@ -42,17 +42,9 @@ class Customer(db.Model):
     
     @property
     def total_balance(self):
-        total_balance = 0
-        for account in self.accounts:
-            # Calculate the balance based on transactions
-            balance = account.balance
-            for transaction in account.transactions:
-                if transaction.transaction_type == 'Insättning':
-                    balance += transaction.amount
-                elif transaction.transaction_type == 'Uttag':
-                    balance -= transaction.amount
-            total_balance += balance
+        total_balance = sum(account.balance for account in self.accounts)
         return round(total_balance, 2)
+
 
     @total_balance.setter
     def total_balance(self, value):
@@ -236,6 +228,8 @@ def template():
 
 from sqlalchemy import or_
 
+from sqlalchemy import func
+
 @app.route("/search", methods=["GET"])
 def search():
     search_query = request.args.get("search_query")
@@ -258,18 +252,17 @@ def search():
         'name': Customer.namn.like(f"%{search_query}%"),
     }
 
-
     query = Customer.query.filter(search_option_filters.get(search_option, False))
 
-    # Fetch the results along with the total balance for each customer
+    # Fetch the results and calculate the total balance for each customer
     results = query.paginate(page=page, per_page=per_page, error_out=False)
+
     for customer in results.items:
-        total_balance = 0
-        for account in customer.accounts:
-            total_balance += account.balance
-        customer.total_balance = total_balance
+        total_balance = sum(account.balance for account in customer.accounts)
+        customer.total_balance = round(total_balance, 2)
 
     return render_template("search.html", results=results, search_query=search_query, search_option=search_option)
+
 
 
 @app.route('/accounttransactions/<account_id>', methods=['GET'])
@@ -352,17 +345,18 @@ def withdrawal():
         account = Account.query.filter_by(account_number=account_number).first()
 
         if not account:
-            error_message = "Account not found. Please enter a valid account number."
-            return render_template("withdrawal.html", error_message=error_message)
+            error_message = "Kontot Hittades inte. Vänligen försök igen"
+            return render_template("uttag.html", error_message=error_message)
 
         if withdrawal_amount <= 0:
-            error_message = "Invalid withdrawal amount. Please enter a positive number."
-            return render_template("withdrawal.html", error_message=error_message)
+            error_message = "Ogiltigt belopp. Skriv ett positivt belopp"
+            return render_template("uttag.html", error_message=error_message)
 
         if withdrawal_amount > account.balance:
-            error_message = "Insufficient funds. Cannot withdraw more than the available balance."
-            return render_template("withdrawal.html", error_message=error_message)
+            error_message = "Det finns inte tillräckligt pengar på kontot!"
+            return render_template("uttag.html", error_message=error_message)
 
+        # Perform the withdrawal only if the amount is valid
         # Update the account balance by subtracting the withdrawal amount
         account.balance -= withdrawal_amount
 
@@ -377,9 +371,10 @@ def withdrawal():
         db.session.commit()
 
         # Redirect to the account page after withdrawal
-        return redirect(url_for("account_transactions", account_id=account.id))
+        return redirect(url_for("accounttransactions", account_id=account.id))
 
     return render_template("uttag.html")
+
 
 
 @app.route("/transfer", methods=["GET", "POST"])
