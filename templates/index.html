@@ -5,17 +5,18 @@
   <h2>Bank Översikt</h2>
 </div>
 
-<div>
-  <div class="kontoindex" style="text-align: center">
+<div class="container" style="text-align: center;">
+  <div class="kontoindex">
     <p><strong>Antal Kunder:</strong><br> {{ total_customers }}</p>
   </div>
 
-  <div class="kontoindex" style="text-align: center">
+  <div class="kontoindex">
     <p><strong>Antal Konton:</strong><br> {{ total_accounts }}</p>
   </div>
 
-  <div class="kontoindex" style="text-align: center">
+  <div class="kontoindex">
     <p><strong>Saldo hos oss idag: <em>(SEK)</em></strong><br> {{ total_balance }}</p>
   </div>
 </div>
 {% endblock %}
+

@@ -1,7 +1,7 @@
 {% extends 'template.html' %}
 
 {% block content %}
-    <section>
+    <section class="content-box">
         <h2>Godkänd Uttag</h2>
         <p>Godkänd uttag <b>{{ withdrawal_amount }} SEK </b> från kontot {{ account.account_number }} som tillhör <b>{{ account.customer.namn }}</b>.</p>
         <p>Transaktions Datum: {{ withdrawal_transaction.timestamp }}</p>

@@ -1,7 +1,7 @@
 {% extends 'template.html' %}
 
 {% block content %}
-    <section>
+    <section class="content-box">
         <h2>Godkänd Insättning</h2>
         <p>Insättning av <b>{{ deposit_amount }} SEK</b> till kontot <em>{{ account.account_number }}</em> som tillhör <strong>{{ account.customer.namn }}</strong> är klart!</p>
         <p>Transaktions Datum: {{ deposit_transaction.timestamp }}</p>

@@ -1,7 +1,7 @@
 {% extends 'template.html' %}
 
 {% block content %}
-    <section>
+    <section class="content-box">
         <h2>Överföring Godkänd.</h2>
         <p>Godkänd Överföring av <b>{{ transfer_amount }}</b> SEK från kontot <b>{{ from_account.account_number }}</b> som tillhör <b>{{ from_account.customer.namn }}</b> till kontot <b>{{ to_account.account_number }}</b> som tillhör <b>{{ to_account.customer.namn }}</b>.</p>
         <p>Transaktions Datum: {{ from_transfer_transaction.timestamp }}</p>
