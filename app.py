@@ -9,7 +9,7 @@ from flask_paginate import Pagination
 from sqlalchemy.sql import func
 from datetime import datetime
 from sqlalchemy import asc
-from sqlalchemy.orm import joinedload  # Import joinedload to load related accounts
+from sqlalchemy.orm import joinedload
 
 
 app = Flask(__name__)
@@ -24,8 +24,6 @@ app.secret_key = "Tornsvalegatan1"
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:golestan5@localhost:3307/torresbank"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
 
-
-#skapa en instans av sqlalchemy som heter db
 db = SQLAlchemy(app)
 
 class Customer(db.Model):
@@ -42,7 +40,6 @@ class Customer(db.Model):
     def __repr__(self):
         return f"<Customer {self.namn} - Email: {self.email}>"
     
-    # För att kunna visa varje kunds saldo
     @property
     def total_balance(self):
         total_balance = 0
@@ -79,10 +76,6 @@ class Account(db.Model):
     id = db.Column(db.Integer, primary_key=True)
     account_number = db.Column(db.String(15), unique=True)
     balance = db.Column(db.Float)  # Existing balance column
-
-    # New column to store balance after each transaction
-    saldo = db.Column(db.Float, default=0.0)  
-
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
     customer = db.relationship('Customer', back_populates='accounts')
 
@@ -333,7 +326,6 @@ def deposit():
 
         # Update the account balance with the deposit amount
         account.balance += deposit_amount
-        account.saldo += deposit_amount  # Update Saldo column with deposit amount
 
         # Add a new transaction for the deposit
         deposit_transaction = Transaction(
@@ -345,9 +337,11 @@ def deposit():
         db.session.add(deposit_transaction)
         db.session.commit()
 
-        return render_template("deposit_success.html", account=account, deposit_amount=deposit_amount, deposit_transaction=deposit_transaction)
+        # Redirect to the account page after deposit
+        return redirect(url_for("accounttransactions", account_id=account.id))
 
     return render_template("deposit.html")
+
 
 @app.route("/withdrawal", methods=["GET", "POST"])
 def withdrawal():
@@ -371,7 +365,6 @@ def withdrawal():
 
         # Update the account balance by subtracting the withdrawal amount
         account.balance -= withdrawal_amount
-        account.saldo -= withdrawal_amount  # Update Saldo column with withdrawal amount
 
         # Add a new transaction for the withdrawal
         withdrawal_transaction = Transaction(
@@ -383,9 +376,11 @@ def withdrawal():
         db.session.add(withdrawal_transaction)
         db.session.commit()
 
-        return render_template("withdrawal_success.html", account=account, withdrawal_amount=withdrawal_amount, withdrawal_transaction=withdrawal_transaction)
+        # Redirect to the account page after withdrawal
+        return redirect(url_for("account_transactions", account_id=account.id))
 
-    return render_template("withdrawal.html")
+    return render_template("uttag.html")
+
 
 @app.route("/transfer", methods=["GET", "POST"])
 def transfer():
@@ -402,25 +397,21 @@ def transfer():
             return render_template("transfer.html", error_message=error_message)
 
         if transfer_amount <= 0:
-            error_message = "You have entered an invalid amount. Please try again."
+            error_message = "You entered an invalid amount. Please try again."
             return render_template("transfer.html", error_message=error_message)
 
         if transfer_amount > from_account.balance:
             error_message = "Insufficient funds. Cannot transfer more than the available balance."
             return render_template("transfer.html", error_message=error_message)
 
-        # Update the balance of the source account by subtracting the transfer amount
+        # Update the balance of the accounts involved in the transfer
         from_account.balance -= transfer_amount
-        from_account.saldo -= transfer_amount  # Update Saldo column of the source account
-
-        # Update the balance of the destination account by adding the transfer amount
         to_account.balance += transfer_amount
-        to_account.saldo += transfer_amount  # Update Saldo column of the destination account
 
         # Add a new transaction for the transfer from the source account
         transfer_from_transaction = Transaction(
             amount=-transfer_amount,
-            transaction_type='Transfer to another account',
+            transaction_type='Överföring till ett annat konto',
             timestamp=datetime.now(),
             account=from_account
         )
@@ -429,7 +420,7 @@ def transfer():
         # Add a new transaction for the transfer to the destination account
         transfer_to_transaction = Transaction(
             amount=transfer_amount,
-            transaction_type='Transfer from another account',
+            transaction_type='Överföring från ett annat konto',
             timestamp=datetime.now(),
             account=to_account
         )
@@ -437,7 +428,8 @@ def transfer():
 
         db.session.commit()
 
-        return render_template("transfer_success.html", from_account=from_account, to_account=to_account, transfer_amount=transfer_amount, transfer_from_transaction=transfer_from_transaction, transfer_to_transaction=transfer_to_transaction)
+        # Redirect to the account page after transfer
+        return redirect(url_for("accounttransactions", account_id=from_account.id))
 
     return render_template("transfer.html")
 
