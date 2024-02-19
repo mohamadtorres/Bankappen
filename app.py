@@ -10,8 +10,6 @@ from sqlalchemy.sql import func
 from datetime import datetime
 from sqlalchemy import asc
 from sqlalchemy.orm import joinedload
-
-
 app = Flask(__name__)
 
 app.config["SESSION_PERMANENT"] = False
@@ -19,7 +17,6 @@ app.config["SESSION_TYPE"] = "filesystem"
 Session(app)
 
 app.secret_key = "Tornsvalegatan1"
-#det här är min master lösenord
 
 app.config["SQLALCHEMY_DATABASE_URI"] = "mysql+mysqlconnector://root:golestan5@localhost:3307/torresbank"
 app.config["SQLALCHEMY_TRACK_MODIFICATIONS"] = False
@@ -39,16 +36,16 @@ class Customer(db.Model):
 
     def __repr__(self):
         return f"<Customer {self.namn} - Email: {self.email}>"
-    
+
     @property
     def total_balance(self):
-        total_balance = sum(account.balance for account in self.accounts)
+        total_balance = 0
+        for account in self.accounts:
+            total_balance += account.calculate_balance()
         return round(total_balance, 2)
-
 
     @total_balance.setter
     def total_balance(self, value):
-        # This setter is needed to make the property writable
         pass
 
 class Admin(db.Model):
@@ -62,18 +59,19 @@ class Admin(db.Model):
     def authenticate(cls, username, password):
         return cls.query.filter_by(username=username, password=password).first()
 
-    
 class Account(db.Model):
     __tablename__ = 'account'
     id = db.Column(db.Integer, primary_key=True)
     account_number = db.Column(db.String(15), unique=True)
-    balance = db.Column(db.Float)  # Existing balance column
     customer_id = db.Column(db.Integer, db.ForeignKey('customer.id'))
     customer = db.relationship('Customer', back_populates='accounts')
-
     transactions = db.relationship('Transaction', back_populates='account')
 
-
+    def calculate_balance(self):
+        balance = 0
+        for transaction in self.transactions:
+            balance += transaction.amount
+        return balance
 
 class Transaction(db.Model):
     __tablename__ = 'transaction'
@@ -81,14 +79,12 @@ class Transaction(db.Model):
     amount = db.Column(db.Float)
     transaction_type = db.Column(db.String(255))
     timestamp = db.Column(db.DateTime)
-
     account_id = db.Column(db.Integer, db.ForeignKey('account.id'))
     account = db.relationship('Account', back_populates='transactions')
 
 def create_tables():
     with app.app_context():
         db.create_all()
-
 
 def seed_data(total: int) -> None:
     with app.app_context():
@@ -124,7 +120,7 @@ def seed_data(total: int) -> None:
 
             existing_customer = Customer.query.filter_by(email=email).first()
             if existing_customer:
-                continue  # Skip this iteration and generate a new customer
+                continue
 
             personnummer = f.random_number(digits=10)
             address = f.address()
@@ -132,27 +128,20 @@ def seed_data(total: int) -> None:
 
             person = Customer(namn=namn, email=email, personnummer=personnummer, address=address, city=city)
 
-            # Add accounts to the customer
             for _ in range(random.randint(1, 3)):
                 account_number = f.random_number(digits=15)
-
                 account = Account(account_number=account_number)
                 person.accounts.append(account)
 
-                # Add initial deposit transaction with a fixed date
                 initial_deposit = 5000.0
                 initial_deposit_transaction = Transaction(
                     amount=initial_deposit,
                     transaction_type='Insättning',
                     timestamp=datetime(2017, 12, 15),
-                    account=account  # Associate the transaction with the account
+                    account=account
                 )
                 account.transactions.append(initial_deposit_transaction)
 
-                # Set the initial balance based on the initial deposit
-                account.balance = initial_deposit
-
-                # Add random transactions to the account
                 for _ in range(random.randint(5, 20)):
                     amount = round(random.uniform(-500, 500), 2)
                     transaction_type = 'Insättning' if amount > 0 else random.choice(['Uttag', 'Överföring'])
@@ -162,16 +151,10 @@ def seed_data(total: int) -> None:
                         amount=amount,
                         transaction_type=transaction_type,
                         timestamp=timestamp,
-                        account=account  # Associate the transaction with the account
+                        account=account
                     )
 
                     account.transactions.append(transaction)
-
-                    # Update the account balance based on the transaction type
-                    if transaction_type == 'Insättning':
-                        account.balance += amount
-                    elif transaction_type == 'Uttag':
-                        account.balance -= amount
 
                 db.session.add(account)
 
@@ -180,55 +163,40 @@ def seed_data(total: int) -> None:
 
             total_person += 1
 
-
-
-
-
 @app.route("/login")
 def index():
     total_customers = Customer.query.count()
-    total_balance = db.session.query(db.func.round(db.func.sum(Account.balance), 2)).scalar() or 0
     total_accounts = Account.query.count()
+    total_balance = db.session.query(func.round(func.sum(Transaction.amount), 2)).scalar() or 0
 
-    return render_template('index.html', total_customers=total_customers, total_balance=total_balance, total_accounts=total_accounts)
+    return render_template('index.html', total_customers=total_customers, total_accounts=total_accounts, total_balance=total_balance)
 
-
-@app.route("/", methods=["GET", "POST"]) #första sidan när personalen kommer
+@app.route("/", methods=["GET", "POST"])
 def login():
     if request.method == "POST":
         username = request.form.get("username")
         password = request.form.get("password")
-
         user = Admin.authenticate(username, password)
-
         if user:
-            session["user_id"] = user.id  # Store user id in session for authentication
-            return redirect(url_for("index"))  # Redirect to index page on successful login
+            session["user_id"] = user.id
+            return redirect(url_for("index"))
         else:
             error_message = "DU har anget fel Username eller Password. Försök igen"
             return render_template("login.html", error_message=error_message)
-
     return render_template("login.html")
 
 @app.route("/customers", strict_slashes=False)
 def customers():
     page = request.args.get('page', 1, type=int)
     per_page = 10
-
-    # Order the customers by their ID in descending order
-    customers_paginated = Customer.query.order_by(asc(Customer.id)).paginate(page=page, per_page=per_page)
-
+    customers_paginated = Customer.query.order_by(Customer.id.asc()).paginate(page=page, per_page=per_page)
     return render_template("customers.html", customers_paginated=customers_paginated)
 
 @app.route("/template")
 def template():
     return render_template("template.html")
 
-
-
 from sqlalchemy import or_
-
-from sqlalchemy import func
 
 @app.route("/search", methods=["GET"])
 def search():
@@ -254,53 +222,32 @@ def search():
 
     query = Customer.query.filter(search_option_filters.get(search_option, False))
 
-    # Fetch the results and calculate the total balance for each customer
     results = query.paginate(page=page, per_page=per_page, error_out=False)
-
     for customer in results.items:
-        total_balance = sum(account.balance for account in customer.accounts)
-        customer.total_balance = round(total_balance, 2)
+        total_balance = 0
+        for account in customer.accounts:
+            total_balance += account.calculate_balance()
+        customer.total_balance = total_balance
 
     return render_template("search.html", results=results, search_query=search_query, search_option=search_option)
-
-
 
 @app.route('/accounttransactions/<account_id>', methods=['GET'])
 def accounttransactions(account_id):
     account = Account.query.get(account_id)
-
     if account:
-        # Calculate the total balance of the account
-        total_balance = sum(transaction.amount for transaction in account.transactions)
-
-        # Get the sorting order from the request
-        order = request.args.get('order', 'desc')  # Set the default order to 'desc'
-
-        # Determine the column to sort by and the order
+        total_balance = account.calculate_balance()
+        order = request.args.get('order', 'desc')
         sort_column = Transaction.timestamp
         if order == 'asc':
             sort_column = sort_column.asc()
         else:
             sort_column = sort_column.desc()
-
-        # Get the page from the request
         page = request.args.get('page', 1, type=int)
-
-        # Set the number of transactions per page
         per_page = 10
-
-        # Fetch the transactions, sorted accordingly and paginated
-        transactions_paginated = Transaction.query \
-            .filter_by(account_id=account.id) \
-            .order_by(sort_column) \
-            .paginate(page=page, per_page=per_page, error_out=False)
-
+        transactions_paginated = Transaction.query.filter_by(account_id=account.id).order_by(sort_column).paginate(page=page, per_page=per_page, error_out=False)
         return render_template('account_transactions.html', account=account, transactions_paginated=transactions_paginated, order=order, total_balance=total_balance)
-
-    # If the account is not found, handle the error appropriately
     return redirect(url_for('search'))
 
-from datetime import datetime
 @app.route("/deposit", methods=["GET", "POST"])
 def deposit():
     if request.method == "POST":
@@ -317,10 +264,13 @@ def deposit():
             error_message = "Invalid deposit amount. Please enter a positive number."
             return render_template("deposit.html", error_message=error_message)
 
-        # Update the account balance with the deposit amount
-        account.balance += deposit_amount
+        # Calculate the account balance dynamically based on transactions
+        account_balance = sum(transaction.amount for transaction in account.transactions)
 
-        # Add a new transaction for the deposit
+        # Update the account balance with the deposit amount
+        account_balance += deposit_amount
+
+        # Create a new transaction for the deposit
         deposit_transaction = Transaction(
             amount=deposit_amount,
             transaction_type='Insättning',
@@ -330,11 +280,9 @@ def deposit():
         db.session.add(deposit_transaction)
         db.session.commit()
 
-        # Redirect to the account page after deposit
-        return redirect(url_for("accounttransactions", account_id=account.id))
+        return render_template("deposit_success.html", account=account, deposit_amount=deposit_amount, deposit_transaction=deposit_transaction, account_balance=account_balance)
 
     return render_template("deposit.html")
-
 
 @app.route("/withdrawal", methods=["GET", "POST"])
 def withdrawal():
@@ -345,20 +293,19 @@ def withdrawal():
         account = Account.query.filter_by(account_number=account_number).first()
 
         if not account:
-            error_message = "Kontot Hittades inte. Vänligen försök igen"
+            error_message = "Kontot hittades inte. Vänligen försök igen"
             return render_template("uttag.html", error_message=error_message)
 
         if withdrawal_amount <= 0:
-            error_message = "Ogiltigt belopp. Skriv ett positivt belopp"
+            error_message = "Ogiltigt belopp. Försök igen"
             return render_template("uttag.html", error_message=error_message)
 
-        if withdrawal_amount > account.balance:
-            error_message = "Det finns inte tillräckligt pengar på kontot!"
-            return render_template("uttag.html", error_message=error_message)
+        # Calculate the current balance of the account based on transactions
+        current_balance = sum(transaction.amount for transaction in account.transactions)
 
-        # Perform the withdrawal only if the amount is valid
-        # Update the account balance by subtracting the withdrawal amount
-        account.balance -= withdrawal_amount
+        if withdrawal_amount > current_balance:
+            error_message = "Det finns inte tillräckligt pengar på kontot."
+            return render_template("uttag.html", error_message=error_message)
 
         # Add a new transaction for the withdrawal
         withdrawal_transaction = Transaction(
@@ -370,12 +317,12 @@ def withdrawal():
         db.session.add(withdrawal_transaction)
         db.session.commit()
 
-        # Redirect to the account page after withdrawal
-        return redirect(url_for("accounttransactions", account_id=account.id))
+        # Calculate the new balance after the withdrawal
+        new_balance = current_balance - withdrawal_amount
+
+        return render_template("uttag_success.html", account=account, withdrawal_amount=withdrawal_amount, withdrawal_transaction=withdrawal_transaction, account_balance=new_balance)
 
     return render_template("uttag.html")
-
-
 
 @app.route("/transfer", methods=["GET", "POST"])
 def transfer():
@@ -388,49 +335,48 @@ def transfer():
         to_account = Account.query.filter_by(account_number=to_account_number).first()
 
         if not from_account or not to_account:
-            error_message = "One or both of the accounts you entered is incorrect. Please try again."
+            error_message = "Ett av kontona hittades inte. Vänligen försök igen"
             return render_template("transfer.html", error_message=error_message)
 
         if transfer_amount <= 0:
-            error_message = "You entered an invalid amount. Please try again."
+            error_message = "Ogiltigt överföringsbelopp. Vänligen försök igen"
             return render_template("transfer.html", error_message=error_message)
 
-        if transfer_amount > from_account.balance:
-            error_message = "Insufficient funds. Cannot transfer more than the available balance."
+        # Calculate the current balance of the from_account based on transactions
+        from_account_balance = sum(transaction.amount for transaction in from_account.transactions)
+
+        if transfer_amount > from_account_balance:
+            error_message = "Det finns inte tillräckligt pengar på avsändarkontot."
             return render_template("transfer.html", error_message=error_message)
 
-        # Update the balance of the accounts involved in the transfer
-        from_account.balance -= transfer_amount
-        to_account.balance += transfer_amount
-
-        # Add a new transaction for the transfer from the source account
-        transfer_from_transaction = Transaction(
-            amount=-transfer_amount,
-            transaction_type='Överföring till ett annat konto',
+        # Add a new transaction for the transfer from the from_account
+        from_transfer_transaction = Transaction(
+            amount=-transfer_amount,  # Negative amount for transfer from the from_account
+            transaction_type='Överföring',
             timestamp=datetime.now(),
             account=from_account
         )
-        db.session.add(transfer_from_transaction)
 
-        # Add a new transaction for the transfer to the destination account
-        transfer_to_transaction = Transaction(
-            amount=transfer_amount,
-            transaction_type='Överföring från ett annat konto',
+        # Add a new transaction for the transfer to the to_account
+        to_transfer_transaction = Transaction(
+            amount=transfer_amount,  # Positive amount for transfer to the to_account
+            transaction_type='Överföring',
             timestamp=datetime.now(),
             account=to_account
         )
-        db.session.add(transfer_to_transaction)
 
+        db.session.add(from_transfer_transaction)
+        db.session.add(to_transfer_transaction)
         db.session.commit()
 
-        # Redirect to the account page after transfer
-        return redirect(url_for("accounttransactions", account_id=from_account.id))
+        # Calculate the new balance after the transfer for the from_account
+        new_from_account_balance = from_account_balance - transfer_amount
+
+        return render_template("transfer_success.html", from_account=from_account, to_account=to_account, transfer_amount=transfer_amount, from_transfer_transaction=from_transfer_transaction, to_transfer_transaction=to_transfer_transaction, from_account_balance=new_from_account_balance)
 
     return render_template("transfer.html")
-
 
 if __name__ == "__main__":
     create_tables()
     seed_data(500)
-    #500 kunder
     app.run(debug=True)

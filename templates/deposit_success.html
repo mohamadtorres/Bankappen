@@ -3,8 +3,8 @@
 {% block content %}
     <section>
         <h2>Godkänd Insättning</h2>
-        <p>Insättning av {{ deposit_amount }} SEK till kontot <em>{{ account.account_number }}</em> som tillhör <strong>{{ account.customer.namn }}</strong> är klart!</p>
+        <p>Insättning av <b>{{ deposit_amount }} SEK</b> till kontot <em>{{ account.account_number }}</em> som tillhör <strong>{{ account.customer.namn }}</strong> är klart!</p>
         <p>Transaktions Datum: {{ deposit_transaction.timestamp }}</p>
-        <p>Nya saldot är  {{ account.balance }} SEK.</p>
+        <p>Nya saldot är  {{ '%.2f'|format(account_balance) }} SEK.</p>
     </section>
 {% endblock %}

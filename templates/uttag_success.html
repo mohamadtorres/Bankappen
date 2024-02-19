@@ -3,8 +3,8 @@
 {% block content %}
     <section>
         <h2>Godkänd Uttag</h2>
-        <p>Godkänd uttag. {{ withdrawal_amount }} SEK från kontot {{ account.account_number }} som tillhör {{ account.customer.namn }}.</p>
+        <p>Godkänd uttag <b>{{ withdrawal_amount }} SEK </b> från kontot {{ account.account_number }} som tillhör <b>{{ account.customer.namn }}</b>.</p>
         <p>Transaktions Datum: {{ withdrawal_transaction.timestamp }}</p>
-        <p>Nya saldot är {{ account.balance }} SEK.</p>
+        <p>Nya saldot är {{ '%.2f'|format(account_balance)  }} SEK.</p>
     </section>
 {% endblock %}
