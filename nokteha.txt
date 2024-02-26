@@ -10,7 +10,7 @@ Vi börjar med att skriva om vår exempel.html-fil så att den ser ut såhär:
     <a href="{{ url_for('index') }}">Tillbaka</a>
 {% endblock %}
 
-Notera att vi använder funktionens namn som en sträng i url_for() och inte sökvägen till funktionen. 
+Notera att vi använder funktionens namn som en sträng i url_for() och inte sökvägen till funktionen!!!
 Detta är för att flask ska kunna hitta funktionen och skapa en sökväg till den
 
 @app.route("/exempel/", strict_slashes=False)

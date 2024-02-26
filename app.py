@@ -264,13 +264,11 @@ def deposit():
             error_message = "Invalid deposit amount. Please enter a positive number."
             return render_template("deposit.html", error_message=error_message)
 
-        # Calculate the account balance dynamically based on transactions
+        #räkna saldo efter VARJE transaction
         account_balance = sum(transaction.amount for transaction in account.transactions)
 
-        # Update the account balance with the deposit amount
         account_balance += deposit_amount
 
-        # Create a new transaction for the deposit
         deposit_transaction = Transaction(
             amount=deposit_amount,
             transaction_type='Insättning',
@@ -300,16 +298,15 @@ def withdrawal():
             error_message = "Ogiltigt belopp. Försök igen"
             return render_template("uttag.html", error_message=error_message)
 
-        # Calculate the current balance of the account based on transactions
+        #räknar RIKTIGA saldo
         current_balance = sum(transaction.amount for transaction in account.transactions)
 
         if withdrawal_amount > current_balance:
             error_message = "Det finns inte tillräckligt pengar på kontot."
             return render_template("uttag.html", error_message=error_message)
 
-        # Add a new transaction for the withdrawal
         withdrawal_transaction = Transaction(
-            amount=-withdrawal_amount,  # Negative amount for withdrawal
+            amount=-withdrawal_amount,  #GLÖM ej att ha minus värde
             transaction_type='Uttag',
             timestamp=datetime.now(),
             account=account
@@ -317,7 +314,6 @@ def withdrawal():
         db.session.add(withdrawal_transaction)
         db.session.commit()
 
-        # Calculate the new balance after the withdrawal
         new_balance = current_balance - withdrawal_amount
 
         return render_template("uttag_success.html", account=account, withdrawal_amount=withdrawal_amount, withdrawal_transaction=withdrawal_transaction, account_balance=new_balance)
@@ -342,24 +338,21 @@ def transfer():
             error_message = "Ogiltigt överföringsbelopp. Vänligen försök igen"
             return render_template("transfer.html", error_message=error_message)
 
-        # Calculate the current balance of the from_account based on transactions
         from_account_balance = sum(transaction.amount for transaction in from_account.transactions)
 
         if transfer_amount > from_account_balance:
             error_message = "Det finns inte tillräckligt pengar på avsändarkontot."
             return render_template("transfer.html", error_message=error_message)
 
-        # Add a new transaction for the transfer from the from_account
         from_transfer_transaction = Transaction(
-            amount=-transfer_amount,  # Negative amount for transfer from the from_account
+            amount=-transfer_amount,  # Negativs värde
             transaction_type='Överföring',
             timestamp=datetime.now(),
             account=from_account
         )
 
-        # Add a new transaction for the transfer to the to_account
         to_transfer_transaction = Transaction(
-            amount=transfer_amount,  # Positive amount for transfer to the to_account
+            amount=transfer_amount, 
             transaction_type='Överföring',
             timestamp=datetime.now(),
             account=to_account
@@ -369,7 +362,6 @@ def transfer():
         db.session.add(to_transfer_transaction)
         db.session.commit()
 
-        # Calculate the new balance after the transfer for the from_account
         new_from_account_balance = from_account_balance - transfer_amount
 
         return render_template("transfer_success.html", from_account=from_account, to_account=to_account, transfer_amount=transfer_amount, from_transfer_transaction=from_transfer_transaction, to_transfer_transaction=to_transfer_transaction, from_account_balance=new_from_account_balance)
