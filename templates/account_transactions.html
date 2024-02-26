@@ -8,16 +8,7 @@
             <tr>
                 <th>Amount</th>
                 <th>Transaction Type</th>
-                <th>
-                    Timestamp
-                    <a href="{{ url_for('accounttransactions', account_id=account.id, order='asc' if order == 'desc' else 'desc') }}">
-                        {% if order == 'asc' %}
-                            &#x25BC;  <!-- Downward arrow symbol -->
-                        {% else %}
-                            &#x25B2;  <!-- Upward arrow symbol -->
-                        {% endif %}
-                    </a>
-                </th>
+                <th>Timestamp</th>
             </tr>
         </thead>
         <tbody>
