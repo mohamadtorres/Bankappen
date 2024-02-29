@@ -1,14 +1,16 @@
 {% extends 'template.html' %}
 
 {% block content %}
-    <h3>Transactions for {{ account.customer.namn }}</h3>
-    <p>Total Balance: <strong>{{ total_balance|round(2) }} SEK</strong></p>
-    <table class="table">
+    <div class="customer-profile">
+        <h3>Transktioner för {{ account.customer.namn }}</h3>
+        <p>Total Saldo: <strong>{{ total_balance|round(2) }} SEK</strong></p>
+    </div>
+    <table class="customer-profile">
         <thead>
             <tr>
                 <th>Amount</th>
                 <th>Transaction Type</th>
-                <th>Timestamp</th>
+                <th>Tid</th>
             </tr>
         </thead>
         <tbody>
@@ -21,7 +23,7 @@
             {% endfor %}
         </tbody>
     </table>
-    <div>
+    <div class="customer-profile">
         {% for page_num in transactions_paginated.iter_pages() %}
             {% if page_num %}
                 {% if transactions_paginated.page == page_num %}
@@ -33,11 +35,12 @@
                 <span class="ellipsis">...</span>
             {% endif %}
         {% endfor %}
+    
+        {% if transactions_paginated.has_next %}
+            <a href="{{ url_for('accounttransactions', account_id=account.id, order=order, page=transactions_paginated.next_num) }}">Next</a>
+        {% endif %}
+        {% if transactions_paginated.has_prev %}
+            <a href="{{ url_for('accounttransactions', account_id=account.id, order=order, page=transactions_paginated.prev_num) }}">Prev</a>
+        {% endif %}
     </div>
-    {% if transactions_paginated.has_next %}
-        <a href="{{ url_for('accounttransactions', account_id=account.id, order=order, page=transactions_paginated.next_num) }}">Next</a>
-    {% endif %}
-    {% if transactions_paginated.has_prev %}
-        <a href="{{ url_for('accounttransactions', account_id=account.id, order=order, page=transactions_paginated.prev_num) }}">Prev</a>
-    {% endif %}
 {% endblock %}

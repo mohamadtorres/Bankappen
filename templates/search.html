@@ -4,23 +4,10 @@
 <div class="search-container">
     <form class="search-form" action="{{ url_for('search') }}" method="GET">
         <input class="search-input" type="text" name="search_query" id="search_query" placeholder="Välj vad vill du söka efter" required>
-        <div class="search-options">
-            <label for="search_by_id">ID</label>
-            <input type="radio" name="search_option" value="id" id="search_by_id" required>
-            
-            <label for="search_by_personnummer">Personnummer</label>
-            <input type="radio" name="search_option" value="personnummer" id="search_by_personnummer" required>
-            
-            <label for="search_by_city">City</label>
-            <input type="radio" name="search_option" value="city" id="search_by_city" required>
-            
-            <label for="search_by_name">Namn</label>
-            <input type="radio" name="search_option" value="name" id="search_by_name" required>
-        </div>
         <button class="search-button" type="submit">Sök</button>
     </form>
 </div>
-<div class="search-container1">
+<div class="customer-profile">
     {% if results %}
         <h3>Resultat:</h3>
         <table class="table">
@@ -31,10 +18,7 @@
                     <th>Personnummer</th>
                     <th>Address</th>
                     <th>City</th>
-                    <th>Total Saldo</th>
-                    <th>Huvudkonto</th>
-                    <th>Sparkonto 1</th>
-                    <th>Sparkonto 2</th>
+                    <th>Profil</th> 
                 </tr>
             </thead>
             <tbody>
@@ -45,10 +29,7 @@
                         <td>{{ customer.personnummer }}</td>
                         <td>{{ customer.address }}</td>
                         <td>{{ customer.city }}</td>
-                        <td>{{ customer.total_balance }}</td>
-                        <td><a href="{{ url_for('accounttransactions', account_id=customer.accounts[0].id) }}">{{ customer.accounts[0].account_number }}</a></td>
-                        <td>{% if customer.accounts|length > 1 %}<a href="{{ url_for('accounttransactions', account_id=customer.accounts[1].id) }}">{{ customer.accounts[1].account_number }}</a>{% endif %}</td>
-                        <td>{% if customer.accounts|length > 2 %}<a href="{{ url_for('accounttransactions', account_id=customer.accounts[2].id) }}">{{ customer.accounts[2].account_number }}</a>{% endif %}</td>
+                        <td><a href="{{ url_for('customer_profile', customer_id=customer.id) }}">Se Profilen</a></td>
                     </tr>
                 {% endfor %}
             </tbody>
@@ -57,11 +38,11 @@
         <div class="pagination">
             <ul class="pagination-list">
                 {% if results.has_prev %}
-                    <li><a href="{{ url_for('search', page=results.prev_num, search_query=search_query, search_option=request.args.get('search_option')) }}"><< Previous</a></li>
+                    <li><a href="{{ url_for('search', page=results.prev_num, search_query=search_query) }}"><< Previous</a></li>
                 {% endif %}
                 <li>Sidan {{ results.page }} av {{ results.pages }}</li>
                 {% if results.has_next %}
-                    <li><a href="{{ url_for('search', page=results.next_num, search_query=search_query, search_option=request.args.get('search_option')) }}">Next >></a></li>
+                    <li><a href="{{ url_for('search', page=results.next_num, search_query=search_query) }}">Next >></a></li>
                 {% endif %}
             </ul>
         </div>
