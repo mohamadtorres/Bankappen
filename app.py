@@ -203,7 +203,6 @@ def search():
     search_query = request.args.get("search_query")
     page = request.args.get('page', 1, type=int)
     per_page = 7 
-    search_option = request.args.get('search_option', 'id') 
 
     try:
         if search_query is not None:
@@ -213,14 +212,15 @@ def search():
     except ValueError:
         search_query_int = None
 
-    search_option_filters = {
-        'id': Customer.id == search_query_int,
-        'personnummer': Customer.personnummer.like(f"%{search_query}%"),
-        'city': Customer.city.like(f"%{search_query}%"),
-        'name': Customer.namn.like(f"%{search_query}%"),
-    }
+    search_filter = (
+        (Customer.id == search_query_int) |
+        (Customer.personnummer.like(f"%{search_query}%")) |
+        (Customer.city.like(f"%{search_query}%")) |
+        (Customer.namn.like(f"%{search_query}%")) |
+        (Customer.address.like(f"%{search_query}%"))
+    )
 
-    query = Customer.query.filter(search_option_filters.get(search_option, False))
+    query = Customer.query.filter(search_filter)
 
     results = query.paginate(page=page, per_page=per_page, error_out=False)
     for customer in results.items:
@@ -229,7 +229,12 @@ def search():
             total_balance += account.calculate_balance()
         customer.total_balance = total_balance
 
-    return render_template("search.html", results=results, search_query=search_query, search_option=search_option)
+    return render_template("search.html", results=results, search_query=search_query)
+
+@app.route("/customer/<int:customer_id>")
+def customer_profile(customer_id):
+    customer = Customer.query.get_or_404(customer_id)
+    return render_template("customer_profil.html", customer=customer)
 
 @app.route('/accounttransactions/<account_id>', methods=['GET'])
 def accounttransactions(account_id):

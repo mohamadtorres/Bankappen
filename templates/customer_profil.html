@@ -1,0 +1,31 @@
+{% extends 'template.html' %}
+
+{% block content %}
+<div class="customer-profile">
+    <h2>{{ customer.namn }}</h2>
+    <table class="table">
+        <thead>
+            <tr>
+                <th>ID</th>
+                <th>Personnummer</th>
+                <th>Address</th>
+                <th>Total Saldo</th>
+                <th>Accounts</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr>
+                <td>{{ customer.id }}</td>
+                <td>{{ customer.personnummer }}</td>
+                <td>{{ customer.address }}</td>
+                <td>{{ customer.total_balance }}</td>
+                <td>
+                    {% for account in customer.accounts %}
+                        <a href="{{ url_for('accounttransactions', account_id=account.id) }}">{{ account.account_number }}</a>{% if not loop.last %}, {% endif %}
+                    {% endfor %}
+                </td>
+            </tr>
+        </tbody>
+    </table>
+</div>
+{% endblock %}
